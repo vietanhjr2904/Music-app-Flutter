@@ -11,23 +11,37 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _user = TextEditingController();
+  final _user = TextEditingController(); // email
   final _pass = TextEditingController();
+
   bool _loading = false;
   String? _error;
 
   Future<void> _submit() async {
+    final email = _user.text.trim();
+    final password = _pass.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      setState(() => _error = 'Vui lòng nhập email và mật khẩu');
+      return;
+    }
+
     setState(() {
       _loading = true;
       _error = null;
     });
-    final err = await AuthService.login(_user.text.trim(), _pass.text);
+
+    final error = await AuthService.login(email, password);
+
     if (!mounted) return;
+
     setState(() => _loading = false);
-    if (err != null) {
-      setState(() => _error = err);
+
+    if (error != null) {
+      setState(() => _error = error);
       return;
     }
+
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const App()),
       (r) => false,
@@ -46,19 +60,24 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               const Icon(Icons.music_note, color: Colors.green, size: 72),
               const SizedBox(height: 8),
-              const Text('Musive Việt',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold)),
+              const Text(
+                'Musive Việt',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 32),
-              _field(_user, 'Tên đăng nhập', Icons.person),
+              _field(_user, 'Email', Icons.email),
               const SizedBox(height: 12),
               _field(_pass, 'Mật khẩu', Icons.lock, obscure: true),
               if (_error != null) ...[
                 const SizedBox(height: 12),
-                Text(_error!,
-                    style: const TextStyle(color: Colors.redAccent)),
+                Text(
+                  _error!,
+                  style: const TextStyle(color: Colors.redAccent),
+                ),
               ],
               const SizedBox(height: 24),
               SizedBox(
@@ -68,7 +87,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24)),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
                   ),
                   onPressed: _loading ? null : _submit,
                   child: _loading
@@ -76,22 +96,31 @@ class _LoginScreenState extends State<LoginScreen> {
                           width: 22,
                           height: 22,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white))
-                      : const Text('Đăng nhập',
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Đăng nhập',
                           style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16)),
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => const RegisterScreen()));
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                  );
                 },
-                child: const Text('Chưa có tài khoản? Đăng ký',
-                    style: TextStyle(color: Colors.white70)),
+                child: const Text(
+                  'Chưa có tài khoản? Đăng ký',
+                  style: TextStyle(color: Colors.white70),
+                ),
               ),
             ],
           ),
@@ -100,8 +129,12 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _field(TextEditingController c, String hint, IconData icon,
-      {bool obscure = false}) {
+  Widget _field(
+    TextEditingController c,
+    String hint,
+    IconData icon, {
+    bool obscure = false,
+  }) {
     return TextField(
       controller: c,
       obscureText: obscure,
@@ -118,5 +151,12 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _user.dispose();
+    _pass.dispose();
+    super.dispose();
   }
 }

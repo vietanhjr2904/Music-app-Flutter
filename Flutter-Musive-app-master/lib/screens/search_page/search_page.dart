@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import '../../controllers/main_controller.dart';
 import '../../methods/string_methods.dart';
 import '../../models/catagory.dart';
@@ -18,100 +20,194 @@ class SearchPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final allTags = tags.map((e) => TagsModel.fromJson(e)).toList();
-    return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: SafeArea(
-          child: NestedScrollView(
-            headerSliverBuilder:
-                (BuildContext context, bool innerBoxIsScrolled) {
-              return [
-                const SliverToBoxAdapter(
-                    child: SizedBox(
-                  height: 40,
-                )),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
-                    child: Text(
-                      "Search",
-                      style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                            fontSize: 36,
-                          ),
+
+    return Consumer<MainController>(
+      builder: (context, con, child) {
+        return Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: SafeArea(
+              child: NestedScrollView(
+                headerSliverBuilder:
+                    (BuildContext context, bool innerBoxIsScrolled) {
+                  return [
+                    const SliverToBoxAdapter(child: SizedBox(height: 40)),
+
+                    /// TITLE
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        child: Text(
+                          "Search",
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineMedium!
+                              .copyWith(fontSize: 36),
+                        ),
+                      ),
                     ),
-                  ),
+
+                    /// 🔥 FILTER DROPDOWN
+                    SliverToBoxAdapter(
+                      child: Row(
+                        children: [
+                          /// GENRE
+                          Expanded(
+                            child: Container(
+                              padding:
+                              const EdgeInsets.symmetric(horizontal: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[900],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: DropdownButton<String>(
+                                value: con.genres.contains(con.selectedGenre)
+                                    ? con.selectedGenre
+                                    : 'All',
+                                dropdownColor: Colors.black,
+                                isExpanded: true,
+                                underline: const SizedBox(),
+                                style: const TextStyle(color: Colors.white),
+                                items: con.genres.map((genre) {
+                                  return DropdownMenuItem(
+                                    value: genre,
+                                    child: Text(genre),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    con.setGenre(value);
+                                  }
+                                },
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(width: 10),
+
+                          /// ARTIST
+                          Expanded(
+                            child: Container(
+                              padding:
+                              const EdgeInsets.symmetric(horizontal: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[900],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: DropdownButton<String>(
+                                value: con.artists.contains(con.selectedArtist)
+                                    ? con.selectedArtist
+                                    : 'All',
+                                dropdownColor: Colors.black,
+                                isExpanded: true,
+                                underline: const SizedBox(),
+                                style: const TextStyle(color: Colors.white),
+                                items: con.artists.map((artist) {
+                                  return DropdownMenuItem(
+                                    value: artist,
+                                    child: Text(artist),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    con.setArtist(value);
+                                  }
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SliverToBoxAdapter(child: SizedBox(height: 10)),
+
+                    /// SEARCH BAR
+                    SliverPersistentHeader(
+                      pinned: true,
+                      delegate: SliverSearchAppBar(con: con),
+                    ),
+                  ];
+                },
+
+                /// BODY
+                body: ListView(
+                  children: [
+                    /// TOP GENRE
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 18.0),
+                      child: Text(
+                        "Your Top genre",
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineMedium!
+                            .copyWith(fontSize: 18),
+                      ),
+                    ),
+
+                    GridView.builder(
+                      itemCount: allTags.sublist(0, 4).length,
+                      physics: const NeverScrollableScrollPhysics(),
+                      shrinkWrap: true,
+                      gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 14,
+                        crossAxisSpacing: 14,
+                        childAspectRatio: 16 / 8,
+                      ),
+                      itemBuilder: (context, i) {
+                        return TagWidget(
+                            tag: allTags.sublist(0, 4)[i], con: con);
+                      },
+                    ),
+
+                    /// BROWSE ALL
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24.0),
+                      child: Text(
+                        "Browse all",
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineMedium!
+                            .copyWith(fontSize: 18),
+                      ),
+                    ),
+
+                    GridView.builder(
+                      itemCount: allTags.sublist(4).length,
+                      physics: const NeverScrollableScrollPhysics(),
+                      shrinkWrap: true,
+                      gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 14,
+                        crossAxisSpacing: 14,
+                        childAspectRatio: 16 / 8,
+                      ),
+                      itemBuilder: (context, i) {
+                        return TagWidget(
+                            tag: allTags.sublist(4)[i], con: con);
+                      },
+                    ),
+
+                    const SizedBox(height: 100),
+                  ],
                 ),
-                const SliverToBoxAdapter(
-                    child: SizedBox(
-                  height: 5,
-                )),
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: SliverSearchAppBar(con: con),
-                ),
-              ];
-            },
-            body: ListView(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 18.0),
-                  child: Text(
-                    "Your Top genre",
-                    style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                          fontSize: 18,
-                        ),
-                  ),
-                ),
-                GridView.builder(
-                  itemCount: allTags.sublist(0, 4).length,
-                  physics: const NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 14,
-                    crossAxisSpacing: 14,
-                    childAspectRatio: 16 / 8,
-                  ),
-                  itemBuilder: (context, i) {
-                    return TagWidget(tag: allTags.sublist(0, 4)[i], con: con);
-                  },
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24.0),
-                  child: Text(
-                    "Browse all",
-                    style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                          fontSize: 18,
-                        ),
-                  ),
-                ),
-                GridView.builder(
-                  itemCount: allTags.sublist(4).length,
-                  physics: const NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 14,
-                    crossAxisSpacing: 14,
-                    childAspectRatio: 16 / 8,
-                  ),
-                  itemBuilder: (context, i) {
-                    return TagWidget(tag: allTags.sublist(4)[i], con: con);
-                  },
-                ),
-                const SizedBox(height: 100),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
 
+/// ================= TAG =================
 class TagWidget extends StatelessWidget {
   final TagsModel tag;
   final MainController con;
+
   const TagWidget({
     Key? key,
     required this.tag,
@@ -123,74 +219,44 @@ class TagWidget extends StatelessWidget {
     return InkWell(
       onTap: () {
         Navigator.push(
-            context,
-            CupertinoPageRoute(
-                builder: (context) => GenrePage(
-                      tag: tag,
-                      con: con,
-                    )));
+          context,
+          CupertinoPageRoute(
+            builder: (context) => GenrePage(tag: tag, con: con),
+          ),
+        );
       },
       child: ClipRRect(
         borderRadius: BorderRadius.circular(5),
         child: Container(
           decoration: BoxDecoration(
-              color: tag.color,
-              borderRadius: BorderRadius.circular(5),
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.grey.shade900,
-                    offset: const Offset(1, 1),
-                    spreadRadius: 1,
-                    blurRadius: 50,
-                    blurStyle: BlurStyle.outer),
-              ]),
+            color: tag.color,
+            borderRadius: BorderRadius.circular(5),
+          ),
           child: Stack(
             children: [
-              const SizedBox(
-                width: double.infinity,
-                height: double.infinity,
-              ),
               Positioned(
                 bottom: 5,
                 right: -15,
                 child: RotationTransition(
                   turns: const AlwaysStoppedAnimation(385 / 360),
-                  child: Container(
+                  child: CachedNetworkImage(
+                    imageUrl: tag.image,
                     width: 70,
                     height: 70,
-                    decoration: BoxDecoration(
-                      color: tag.color,
-                      borderRadius: BorderRadius.circular(3),
-                      boxShadow: kElevationToShadow[2],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(3),
-                      child: CachedNetworkImage(
-                        imageUrl: tag.image,
-                        fit: BoxFit.cover,
-                        width: 70,
-                        height: 70,
-                        maxHeightDiskCache: 120,
-                        maxWidthDiskCache: 120,
-                        memCacheHeight:
-                            (120 * MediaQuery.of(context).devicePixelRatio)
-                                .round(),
-                        memCacheWidth:
-                            (120 * MediaQuery.of(context).devicePixelRatio)
-                                .round(),
-                      ),
-                    ),
+                    fit: BoxFit.cover,
                   ),
                 ),
               ),
               Padding(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-                child: Text(tag.tag.toTitleCase(),
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyLarge!
-                        .copyWith(fontSize: 20, fontWeight: FontWeight.bold)),
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: Text(
+                  tag.tag.toTitleCase(),
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
@@ -200,50 +266,45 @@ class TagWidget extends StatelessWidget {
   }
 }
 
+/// ================= SEARCH BAR =================
 class SliverSearchAppBar extends SliverPersistentHeaderDelegate {
   final MainController con;
-  SliverSearchAppBar({
-    required this.con,
-  });
+
+  SliverSearchAppBar({required this.con});
+
   @override
   Widget build(context, double shrinkOffset, bool overlapsContent) {
     return InkWell(
       onTap: () {
         Navigator.push(
-            context,
-            CupertinoPageRoute(
-                builder: (context) => SearchResultsPage(
-                      con: con,
-                    )));
+          context,
+          CupertinoPageRoute(
+            builder: (context) => SearchResultsPage(con: con),
+          ),
+        );
       },
       child: Container(
         color: Colors.black,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10.0),
-          child: Container(
-            width: MediaQuery.of(context).size.width,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(5),
-            ),
-            height: 50,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-              child: Row(
-                children: [
-                  const SizedBox(
-                      height: 50, child: Icon(CupertinoIcons.search)),
-                  const SizedBox(width: 10),
-                  Text(
-                    "Songs, Artists or Genres",
-                    style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                          color: Colors.grey.shade800,
-                          fontSize: 18,
-                        ),
-                  ),
-                ],
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Container(
+          height: 50,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(5),
+          ),
+          child: Row(
+            children: [
+              const SizedBox(width: 10),
+              const Icon(CupertinoIcons.search),
+              const SizedBox(width: 10),
+              Text(
+                "Songs, Artists or Genres",
+                style: TextStyle(
+                  color: Colors.grey.shade800,
+                  fontSize: 18,
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),

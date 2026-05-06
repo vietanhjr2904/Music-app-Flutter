@@ -2,18 +2,25 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
+
+import 'package:spotify_clone/controllers/main_controller.dart';
 import 'package:spotify_clone/screens/auth/auth_service.dart';
 import 'package:spotify_clone/screens/auth/login_screen.dart';
 import 'package:spotify_clone/screens/bottom_nav_bar/bottom_nav_bar.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  /// INIT HIVE
   if (kIsWeb) {
     await Hive.initFlutter();
   } else {
     final dir = await getApplicationDocumentsDirectory();
     await Hive.initFlutter(dir.path);
   }
+
+  /// OPEN BOXES
   await Hive.openBox('liked');
   await Hive.openBox('Recentsearch');
   await Hive.openBox('RecentlyPlayed');
@@ -23,12 +30,22 @@ Future<void> main() async {
   await Hive.openBox('spotifyCache');
   await Hive.openBox('ytCache');
   await Hive.openBox('appMeta');
+
   await _migrateStaleData();
-  runApp(const MyApp());
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => MainController()..init(),
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
-/// Drop pre-YouTube cached entries (SoundHelix URLs whose titles were Vietnamese
-/// from mock_data.dart) so users don't see "Sơn Tùng" but hear electronic music.
+/// MIGRATE (giữ nguyên)
 Future<void> _migrateStaleData() async {
   const migrationKey = 'migration_yt_v2';
   final meta = Hive.box('appMeta');
@@ -38,6 +55,7 @@ Future<void> _migrateStaleData() async {
   for (final name in boxes) {
     final box = Hive.box(name);
     final keysToRemove = <dynamic>[];
+
     for (final k in box.keys) {
       final v = box.get(k);
       if (v is Map && v['track'] is String) {
@@ -47,10 +65,12 @@ Future<void> _migrateStaleData() async {
         }
       }
     }
+
     for (final k in keysToRemove) {
       await box.delete(k);
     }
   }
+
   await Hive.box('ytCache').clear();
   await Hive.box('spotifyCache').clear();
   await meta.put(migrationKey, true);
@@ -59,6 +79,10 @@ Future<void> _migrateStaleData() async {
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
+  Future<bool> _checkLogin() async {
+    return await AuthService.isLoggedIn();
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -66,42 +90,25 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         fontFamily: 'Proxima',
-        canvasColor: Colors.transparent,
-        shadowColor: Colors.transparent,
-        highlightColor: Colors.transparent,
         scaffoldBackgroundColor: Colors.black,
-        splashColor: Colors.transparent,
-        hoverColor: Colors.transparent,
-        progressIndicatorTheme: ProgressIndicatorThemeData(
-          circularTrackColor: Colors.greenAccent[700],
-          color: Colors.greenAccent[400],
-          linearMinHeight: 10,
-        ),
-        textTheme: const TextTheme(
-          headlineMedium: TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontFamily: 'Proxima Bold',
-            fontWeight: FontWeight.w600,
-          ),
-          bodyLarge: TextStyle(
-            fontSize: 16,
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
         primarySwatch: Colors.blue,
       ),
-      builder: (context, child) {
-        return MediaQuery(
-          child: ScrollConfiguration(
-            behavior: NoGlowBehavior(),
-            child: child!,
-          ),
-          data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
-        );
-      },
-      home: AuthService.isLoggedIn() ? const App() : const LoginScreen(),
+      home: FutureBuilder<bool>(
+        future: _checkLogin(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          if (snapshot.data == true) {
+            return const App();
+          } else {
+            return const LoginScreen();
+          }
+        },
+      ),
     );
   }
 }

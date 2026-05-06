@@ -13,22 +13,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _user = TextEditingController();
   final _email = TextEditingController();
   final _pass = TextEditingController();
+
   bool _loading = false;
   String? _error;
 
   Future<void> _submit() async {
+    final username = _user.text.trim();
+    final email = _email.text.trim();
+    final password = _pass.text;
+
+    if (username.isEmpty || email.isEmpty || password.isEmpty) {
+      setState(() => _error = 'Vui lòng nhập đầy đủ thông tin');
+      return;
+    }
+
+    if (password.length < 6) {
+      setState(() => _error = 'Mật khẩu phải có ít nhất 6 ký tự');
+      return;
+    }
+
     setState(() {
       _loading = true;
       _error = null;
     });
-    final err = await AuthService.register(
-        _user.text.trim(), _email.text.trim(), _pass.text);
+
+    final error = await AuthService.register(username, email, password);
+
     if (!mounted) return;
+
     setState(() => _loading = false);
-    if (err != null) {
-      setState(() => _error = err);
+
+    if (error != null) {
+      setState(() => _error = error);
       return;
     }
+
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const App()),
       (r) => false,
@@ -49,22 +68,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
           padding: const EdgeInsets.all(24),
           child: ListView(
             children: [
-              const Text('Đăng ký tài khoản',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold)),
+              const Text(
+                'Đăng ký tài khoản',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 24),
               _field(_user, 'Tên đăng nhập', Icons.person),
               const SizedBox(height: 12),
               _field(_email, 'Email', Icons.email),
               const SizedBox(height: 12),
-              _field(_pass, 'Mật khẩu (>= 4 ký tự)', Icons.lock,
-                  obscure: true),
+              _field(_pass, 'Mật khẩu (>= 6 ký tự)', Icons.lock, obscure: true),
               if (_error != null) ...[
                 const SizedBox(height: 12),
-                Text(_error!,
-                    style: const TextStyle(color: Colors.redAccent)),
+                Text(
+                  _error!,
+                  style: const TextStyle(color: Colors.redAccent),
+                ),
               ],
               const SizedBox(height: 24),
               SizedBox(
@@ -74,7 +97,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24)),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
                   ),
                   onPressed: _loading ? null : _submit,
                   child: _loading
@@ -82,12 +106,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           width: 22,
                           height: 22,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white))
-                      : const Text('Tạo tài khoản',
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Tạo tài khoản',
                           style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16)),
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -97,8 +127,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _field(TextEditingController c, String hint, IconData icon,
-      {bool obscure = false}) {
+  Widget _field(
+    TextEditingController c,
+    String hint,
+    IconData icon, {
+    bool obscure = false,
+  }) {
     return TextField(
       controller: c,
       obscureText: obscure,
@@ -115,5 +149,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _user.dispose();
+    _email.dispose();
+    _pass.dispose();
+    super.dispose();
   }
 }
