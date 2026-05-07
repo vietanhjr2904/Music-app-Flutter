@@ -1,0 +1,1 @@
+C:\Users\ASUS\AndroidStudioProjects\Musicapp-flutter\Flutter-Musive-app-master\Flutter-Musive-app-master\android\app\build\intermediates\cxx\release\3p58565v\obj\armeabi-v7a

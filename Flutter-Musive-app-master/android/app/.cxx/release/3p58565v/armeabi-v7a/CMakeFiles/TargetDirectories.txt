@@ -1,0 +1,2 @@
+C:/Users/ASUS/AndroidStudioProjects/Musicapp-flutter/Flutter-Musive-app-master/Flutter-Musive-app-master/android/app/.cxx/release/3p58565v/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/ASUS/AndroidStudioProjects/Musicapp-flutter/Flutter-Musive-app-master/Flutter-Musive-app-master/android/app/.cxx/release/3p58565v/armeabi-v7a/CMakeFiles/rebuild_cache.dir
