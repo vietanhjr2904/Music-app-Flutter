@@ -38,7 +38,7 @@ dependencies:
   cached_network_image: ^3.2.0
   flutter_bloc: ^9.1.1
   line_icons: ^2.0.1
-  assets_audio_player: ^3.0.8
+  assets_audio_player: ^3.1.1
   provider: ^6.0.2
   hive_flutter: ^1.1.0
   path_provider: ^2.0.8
